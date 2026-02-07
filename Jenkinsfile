@@ -26,7 +26,12 @@ pipeline {
 
         stage('Run Cypress tests') {
             steps {
-                sh 'npx cypress run'
+                // Start Xvfb on display :99 in the background, then run Cypress
+                sh '''
+                    Xvfb :99 -screen 0 1280x1024x24 &
+                    export DISPLAY=:99
+                    npx cypress run
+                '''
             }
         }
     }
