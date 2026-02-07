@@ -2,35 +2,30 @@ pipeline {
     agent any
 
     environment {
-        CYPRESS_CACHE_FOLDER = '/tmp/.cache/Cypress' // optional: cache Cypress to speed up builds
+        CYPRESS_CACHE_FOLDER = '/tmp/.cache/Cypress' // optional: speeds up repeated builds
     }
 
     stages {
         stage('Checkout code') {
             steps {
+                // Simple checkout from your repo
                 checkout([
                     $class: 'GitSCM',
-                    branches: [[name: '*/main']], // change if your default branch is different
-                    extensions: [[$class: 'CloneOption', depth: 1, shallow: true]], // shallow clone
+                    branches: [[name: '*/main']], // replace with your default branch if needed
+                    extensions: [[$class: 'CloneOption', depth: 1, shallow: true]],
                     userRemoteConfigs: [[url: 'https://github.com/japjap/CypressDemo']]
                 ])
             }
         }
 
-        stage('Install dependencies') {
+        stage('Run Cypress tests in Docker') {
             steps {
-                sh 'npm install'
-            }
-        }
-
-        stage('Run Cypress tests') {
-            steps {
-                // Run Cypress in Docker manually
+                // Use Cypress official Docker image with Node + Cypress + dependencies included
                 sh '''
                 docker run --rm \
-                    -v $PWD:/e2e \
-                    -w /e2e \
-                    cypress/included:14.5.4
+                  -v $PWD:/e2e \
+                  -w /e2e \
+                  cypress/included:14.5.4
                 '''
             }
         }
