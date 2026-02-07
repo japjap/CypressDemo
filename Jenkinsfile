@@ -1,8 +1,13 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'cypress/included:14.5.4' // prebuilt image with Cypress + dependencies
+            args '-u root' // run as root
+        }
+    }
 
-    tools {
-        nodejs 'node-25'
+    environment {
+        DISPLAY = ':99'
     }
 
     stages {
@@ -10,8 +15,7 @@ pipeline {
             steps {
                 checkout([
                     $class: 'GitSCM',
-                    branches: [[name: '*/main']], // or your default branch
-                    doGenerateSubmoduleConfigurations: false,
+                    branches: [[name: '*/main']], // replace if your branch is different
                     extensions: [[$class: 'CloneOption', depth: 1, shallow: true]],
                     userRemoteConfigs: [[url: 'https://github.com/japjap/CypressDemo']]
                 ])
@@ -26,12 +30,7 @@ pipeline {
 
         stage('Run Cypress tests') {
             steps {
-                // Start Xvfb on display :99 in the background, then run Cypress
-                sh '''
-                    Xvfb :99 -screen 0 1280x1024x24 &
-                    export DISPLAY=:99
-                    npx cypress run
-                '''
+                sh 'npx cypress run'
             }
         }
     }
