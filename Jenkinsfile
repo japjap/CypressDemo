@@ -2,20 +2,30 @@ pipeline {
     agent any
 
     tools {
-        nodejs 'node-25'   // must match the NodeJS installation name in Jenkins
+        nodejs 'node-18'
     }
 
     stages {
+        stage('Checkout code') {
+            steps {
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']], // or your default branch
+                    doGenerateSubmoduleConfigurations: false,
+                    extensions: [[$class: 'CloneOption', depth: 1, shallow: true]],
+                    userRemoteConfigs: [[url: 'https://github.com/japjap/CypressDemo']]
+                ])
+            }
+        }
+
         stage('Install dependencies') {
             steps {
-                echo 'Installing npm dependencies...'
                 sh 'npm install'
             }
         }
 
         stage('Run Cypress tests') {
             steps {
-                echo 'Running Cypress tests...'
                 sh 'npx cypress run'
             }
         }
