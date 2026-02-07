@@ -1,13 +1,8 @@
 pipeline {
-    agent {
-        docker {
-            image 'cypress/included:14.5.4' // prebuilt image with Cypress + dependencies
-            args '-u root' // run as root
-        }
-    }
+    agent any
 
     environment {
-        DISPLAY = ':99'
+        CYPRESS_CACHE_FOLDER = '/tmp/.cache/Cypress' // optional: cache Cypress to speed up builds
     }
 
     stages {
@@ -15,8 +10,8 @@ pipeline {
             steps {
                 checkout([
                     $class: 'GitSCM',
-                    branches: [[name: '*/main']], // replace if your branch is different
-                    extensions: [[$class: 'CloneOption', depth: 1, shallow: true]],
+                    branches: [[name: '*/main']], // change if your default branch is different
+                    extensions: [[$class: 'CloneOption', depth: 1, shallow: true]], // shallow clone
                     userRemoteConfigs: [[url: 'https://github.com/japjap/CypressDemo']]
                 ])
             }
@@ -30,7 +25,13 @@ pipeline {
 
         stage('Run Cypress tests') {
             steps {
-                sh 'npx cypress run'
+                // Run Cypress in Docker manually
+                sh '''
+                docker run --rm \
+                    -v $PWD:/e2e \
+                    -w /e2e \
+                    cypress/included:14.5.4
+                '''
             }
         }
     }
