@@ -1,31 +1,18 @@
 pipeline {
     agent any
 
-    environment {
-        CYPRESS_CACHE_FOLDER = '/tmp/.cache/Cypress' // optional: speeds up repeated builds
-    }
-
     stages {
-        stage('Checkout code') {
+        stage('Checkout') {
             steps {
-                // Simple checkout from your repo
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: '*/main']], // replace with your default branch if needed
-                    extensions: [[$class: 'CloneOption', depth: 1, shallow: true]],
-                    userRemoteConfigs: [[url: 'https://github.com/japjap/CypressDemo']]
-                ])
+                git url: 'https://github.com/japjap/CypressDemo', branch: 'main'
             }
         }
 
-        stage('Run Cypress tests in Docker') {
+        stage('Run Cypress Tests') {
             steps {
-                // Use Cypress official Docker image with Node + Cypress + dependencies included
+                // Runs Cypress in its official Docker container
                 sh '''
-                docker run --rm \
-                  -v $PWD:/e2e \
-                  -w /e2e \
-                  cypress/included:14.5.4
+                docker run --rm -v $PWD:/e2e -w /e2e cypress/included:14.5.4
                 '''
             }
         }
@@ -33,13 +20,7 @@ pipeline {
 
     post {
         always {
-            echo 'Pipeline finished.'
-        }
-        success {
-            echo 'Tests passed ✅'
-        }
-        failure {
-            echo 'Tests failed ❌'
+            echo "Pipeline finished."
         }
     }
 }
