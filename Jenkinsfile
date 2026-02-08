@@ -1,35 +1,47 @@
 pipeline {
     agent any
 
+    environment {
+        WORKSPACE_DIR = "${env.WORKSPACE}"
+    }
+
     stages {
-        stage('Checkout') {
+        stage('Checkout SCM') {
             steps {
+                echo "Checking out code..."
                 checkout scm
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                echo "Installing Node.js dependencies inside Docker..."
+                sh '''
+                docker run --rm -v $WORKSPACE_DIR:/e2e -w /e2e node:22-bullseye bash -c "
+                    npm install
+                "
+                '''
             }
         }
 
         stage('Run Cypress Tests') {
             steps {
+                echo "Running Cypress tests..."
                 sh '''
-                  echo "Workspace: $(pwd)"
-                  docker run --rm \
-                    -v "$(pwd):/e2e" \
-                    -w /e2e \
-                    cypress/included:14.5.4
+                docker run --rm -v $WORKSPACE_DIR:/e2e -w /e2e node:22-bullseye bash -c "
+                    npx cypress run
+                "
                 '''
             }
         }
     }
 
     post {
-        always {
-            echo 'Pipeline finished.'
-        }
         success {
-            echo 'Tests passed ✅'
+            echo "Cypress tests passed ✅"
         }
         failure {
-            echo 'Tests failed ❌'
+            echo "Cypress tests failed ❌"
         }
     }
 }
