@@ -17,9 +17,12 @@ pipeline {
         stage('Run Cypress Tests in Docker') {
             steps {
                 echo 'Running Cypress tests inside Docker...'
-                // Run Cypress using the official included image
                 sh """
-                docker run --rm -v ${WORKSPACE_DIR}:/e2e -w /e2e ${CYPRESS_IMAGE} npx cypress run
+                    docker run --rm \
+                        -v ${WORKSPACE_DIR}:/e2e \
+                        -w /e2e \
+                        ${CYPRESS_IMAGE} \
+                        npx cypress run
                 """
             }
         }
