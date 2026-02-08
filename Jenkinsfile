@@ -13,13 +13,12 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Install Node.js Dependencies') {
             steps {
-                echo "Installing Node.js dependencies inside Docker..."
+                echo "Installing Node.js dependencies..."
+                // Run inside Jenkins container
                 sh '''
-                docker run --rm -v $WORKSPACE_DIR:/e2e -w /e2e node:22-bullseye bash -c "
-                    npm install
-                "
+                npm install
                 '''
             }
         }
@@ -28,9 +27,8 @@ pipeline {
             steps {
                 echo "Running Cypress tests..."
                 sh '''
-                docker run --rm -v $WORKSPACE_DIR:/e2e -w /e2e node:22-bullseye bash -c "
-                    npx cypress run
-                "
+                # Run Cypress using TypeScript config
+                npx cypress run
                 '''
             }
         }
