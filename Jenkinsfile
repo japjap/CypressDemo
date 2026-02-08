@@ -16,7 +16,11 @@ pipeline {
 
         stage('Run Cypress Tests') {
             steps {
-                sh 'npx cypress run'
+                sh '''
+                    Xvfb :99 &             # Start virtual display
+                    export DISPLAY=:99     # Set DISPLAY environment variable
+                    npx cypress run        # Run Cypress tests
+                '''
             }
         }
     }
