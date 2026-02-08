@@ -4,21 +4,23 @@ FROM jenkins/jenkins:lts-jdk17
 # Switch to root to install packages
 USER root
 
-# Install dependencies: Node.js, npm, Docker CLI, curl, git
+# Install dependencies: Node.js, npm, Docker CLI, curl, git, unzip
 RUN apt-get update && \
-    apt-get install -y curl gnupg2 lsb-release software-properties-common git && \
+    apt-get install -y curl gnupg2 lsb-release software-properties-common git unzip && \
     # Install Node.js 18 (latest LTS)
     curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
     apt-get install -y nodejs && \
     npm install -g npm@latest && \
     # Install Docker CLI
     curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian  stable" \
         > /etc/apt/sources.list.d/docker.list && \
     apt-get update && \
     apt-get install -y docker-ce-cli && \
+    # Install Cypress globally
+    npm install -g cypress && \
     # Clean up
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+    apt-get clean && rm -rf /var/lib/apt/lists/* /root/.npm /root/.cache
 
 # Switch back to Jenkins user
 USER jenkins
