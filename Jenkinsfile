@@ -1,36 +1,36 @@
 pipeline {
     agent any
 
+    environment {
+        CYPRESS_IMAGE = 'cypress/included:14.5.4'
+        WORKSPACE_DIR = "${env.WORKSPACE}"
+    }
+
     stages {
         stage('Checkout Code') {
             steps {
+                echo 'Checking out code...'
                 checkout scm
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Run Cypress Tests in Docker') {
             steps {
-                sh 'npm install cypress'
-            }
-        }
-
-        stage('Run Cypress Tests') {
-            steps {
-                sh '''
-                    Xvfb :99 &             # Start virtual display
-                    export DISPLAY=:99     # Set DISPLAY environment variable
-                    npx cypress run        # Run Cypress tests
-                '''
+                echo 'Running Cypress tests inside Docker...'
+                // Run Cypress using the official included image
+                sh """
+                docker run --rm -v ${WORKSPACE_DIR}:/e2e -w /e2e ${CYPRESS_IMAGE} npx cypress run
+                """
             }
         }
     }
 
     post {
         success {
-            echo 'Cypress tests passed ✅'
+            echo '✅ Cypress tests passed!'
         }
         failure {
-            echo 'Cypress tests failed ❌'
+            echo '❌ Cypress tests failed!'
         }
     }
 }
