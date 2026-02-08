@@ -1,15 +1,7 @@
 pipeline {
-    agent {
-        docker {
-            // Cypress base image with Node.js installed
-            image 'cypress/base:18'
-            // Optional: remove container after run
-            args '--rm'
-        }
-    }
+    agent any
 
     environment {
-        // You can set any environment variables here if needed
         CYPRESS_BASE_URL = 'http://localhost:3000'
     }
 
@@ -21,18 +13,18 @@ pipeline {
             }
         }
 
-        stage('Install Node.js Dependencies') {
+        stage('Run Cypress in Docker') {
             steps {
-                echo 'Installing Node.js dependencies...'
-                sh 'npm install'
-            }
-        }
+                echo 'Running Cypress tests inside Docker...'
 
-        stage('Run Cypress Tests') {
-            steps {
-                echo 'Running Cypress tests...'
-                // Run headless Cypress tests
-                sh 'npx cypress run'
+                // Run Docker container with Cypress base image
+                sh '''
+                    docker run --rm \
+                        -v $PWD:/e2e \
+                        -w /e2e \
+                        cypress/base:18 \
+                        /bin/bash -c "npm install && npx cypress run"
+                '''
             }
         }
     }
