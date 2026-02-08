@@ -4,15 +4,18 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git url: 'https://github.com/japjap/CypressDemo', branch: 'main'
+                checkout scm
             }
         }
 
         stage('Run Cypress Tests') {
             steps {
-                // Runs Cypress in its official Docker container
                 sh '''
-                docker run --rm -v $PWD:/e2e -w /e2e cypress/included:14.5.4
+                  echo "Workspace: $(pwd)"
+                  docker run --rm \
+                    -v "$(pwd):/e2e" \
+                    -w /e2e \
+                    cypress/included:14.5.4
                 '''
             }
         }
@@ -20,7 +23,13 @@ pipeline {
 
     post {
         always {
-            echo "Pipeline finished."
+            echo 'Pipeline finished.'
+        }
+        success {
+            echo 'Tests passed ✅'
+        }
+        failure {
+            echo 'Tests failed ❌'
         }
     }
 }
