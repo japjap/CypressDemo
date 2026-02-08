@@ -1,45 +1,48 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            // Cypress base image with Node.js installed
+            image 'cypress/base:18'
+            // Optional: remove container after run
+            args '--rm'
+        }
+    }
 
     environment {
-        WORKSPACE_DIR = "${env.WORKSPACE}"
+        // You can set any environment variables here if needed
+        CYPRESS_BASE_URL = 'http://localhost:3000'
     }
 
     stages {
-        stage('Checkout SCM') {
+        stage('Checkout Code') {
             steps {
-                echo "Checking out code..."
+                echo 'Checking out code...'
                 checkout scm
             }
         }
 
         stage('Install Node.js Dependencies') {
             steps {
-                echo "Installing Node.js dependencies..."
-                // Run inside Jenkins container
-                sh '''
-                npm install
-                '''
+                echo 'Installing Node.js dependencies...'
+                sh 'npm install'
             }
         }
 
         stage('Run Cypress Tests') {
             steps {
-                echo "Running Cypress tests..."
-                sh '''
-                # Run Cypress using TypeScript config
-                npx cypress run
-                '''
+                echo 'Running Cypress tests...'
+                // Run headless Cypress tests
+                sh 'npx cypress run'
             }
         }
     }
 
     post {
         success {
-            echo "Cypress tests passed ✅"
+            echo 'Cypress tests passed ✅'
         }
         failure {
-            echo "Cypress tests failed ❌"
+            echo 'Cypress tests failed ❌'
         }
     }
 }
