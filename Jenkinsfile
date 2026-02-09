@@ -19,7 +19,7 @@ pipeline {
                 sh '''
                 docker run --rm \
                     -v $WORKSPACE:/e2e \
-                    -w /e2e/Cypress-Foundations-Course \
+                    -w /e2e \
                     cypress/included:14.5.4 \
                     npx cypress run
                 '''
