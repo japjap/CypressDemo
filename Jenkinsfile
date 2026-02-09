@@ -7,10 +7,16 @@ pipeline {
 
     stages {
 
+        stage('Checkout Code') {
+            steps {
+                checkout scm
+            }
+        }
+
         stage('Debug Workspace') {
             steps {
                 sh '''
-                docker run --rm \
+                  docker run --rm \
                     -v $WORKSPACE:/e2e \
                     -w /e2e \
                     cypress/included:14.5.4 \
@@ -19,21 +25,14 @@ pipeline {
             }
         }
 
-        stage('Checkout Code') {
-            steps {
-                echo 'Checking out code...'
-                checkout scm
-            }
-        }
-
         stage('Run Cypress Tests in Docker') {
             steps {
                 sh '''
-                docker run --rm \
+                  docker run --rm \
                     -v $WORKSPACE:/e2e \
                     -w /e2e \
                     cypress/included:14.5.4 \
-                    npx cypress run
+                    npx cypress run --config-file cypress.config.js
                 '''
             }
         }
