@@ -13,17 +13,15 @@ pipeline {
             }
         }
 
-        stage('Debug Workspace') {
-            steps {
-                sh '''
-                docker run --rm \
-                    -v $WORKSPACE:/e2e \
-                    -w /e2e \
-                    cypress/included:14.5.4 \
-                    /bin/sh -c "ls -la"
-                '''
-            }
-        }
+        
+
+stage('Debug Workspace') {
+    steps {
+        sh 'ls -la'
+    }
+}
+
+
 
         stage('Run Cypress Tests in Docker') {
             steps {
