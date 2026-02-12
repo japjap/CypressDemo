@@ -1,14 +1,14 @@
 pipeline {
+    // Use a Docker container with Cypress pre-installed as the agent
     agent {
         docker {
             image 'cypress/included:14.5.4'
-            args '--user root'
+            args '--user root'  // optional: run as root to avoid permission issues
         }
     }
 
     environment {
-        // Directory to cache node_modules
-        NODE_MODULES_CACHE = "${WORKSPACE}/node_modules"
+        CYPRESS_IMAGE = 'cypress/included:14.5.4'
     }
 
     stages {
@@ -21,27 +21,14 @@ pipeline {
 
         stage('Debug Workspace') {
             steps {
+                // List files to verify checkout
                 sh 'ls -la'
             }
         }
-
-        stage('Install Dependencies') {
-            steps {
-                echo "📦 Installing Node.js dependencies..."
-                // Only install if node_modules folder doesn't exist
-                sh '''
-                if [ ! -d "$NODE_MODULES_CACHE" ]; then
-                    npm install
-                else
-                    echo "📁 node_modules already exists, skipping npm install"
-                fi
-                '''
-            }
-        }
-
+        
         stage('Run Cypress Tests') {
             steps {
-                echo "🏃 Running Cypress tests..."
+                // Run Cypress directly inside the container
                 sh 'npx cypress run --config-file cypress.config.js --no-sandbox'
             }
         }
