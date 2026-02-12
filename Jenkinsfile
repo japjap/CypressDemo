@@ -1,6 +1,9 @@
 pipeline {
     agent {
-        dockerfile true
+        docker {
+            image 'cypress/included:14.5.4'
+            args '--user root'
+        }
     }
 
     environment {
