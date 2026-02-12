@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'cypress/included:14.5.4'
+            args '-u root'
+        }
+    }
 
     environment {
         CYPRESS_IMAGE = 'cypress/included:14.5.4'
@@ -21,13 +26,7 @@ pipeline {
         
         stage('Run Cypress Tests in Docker') {
             steps {
-                sh '''
-                docker run --rm \
-                    -v $WORKSPACE:/e2e \
-                    -w /e2e \
-                    cypress/included:14.5.4 \
-                    npx cypress run --config-file cypress.config.js --no-sandbox
-                '''
+                sh 'npx cypress run --config-file cypress.config.js --no-sandbox'
             }
         }
     }
