@@ -14,18 +14,21 @@ pipeline {
 
         stage('Checkout Code') {
             steps {
+                echo "🔄 Checking out code from Git..."
                 checkout scm
             }
         }
 
         stage('Debug Workspace') {
             steps {
+                echo "🛠 Listing workspace contents..."
                 sh 'ls -la'
             }
         }
-        
+
         stage('Run Cypress Tests') {
             steps {
+                echo "🏃 Running Cypress tests..."
                 sh 'npx cypress run --config-file cypress.config.js --no-sandbox'
             }
         }
