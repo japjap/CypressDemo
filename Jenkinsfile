@@ -34,16 +34,15 @@ pipeline {
                             -v \$WORKSPACE:/e2e \
                             -w /e2e \
                             ${CYPRESS_IMAGE} \
-                            npx cypress run --config-file cypress.config.js --no-sandbox
+                            npx cypress run --config-file cypress.config.js
                         """
                     } else {
-                        // Windows agent
                         bat """
                         docker run --rm ^
                             -v %WORKSPACE%:/e2e ^
                             -w /e2e ^
                             ${CYPRESS_IMAGE} ^
-                            npx cypress run --config-file cypress.config.js --no-sandbox
+                            npx cypress run --config-file cypress.config.js
                         """
                     }
                 }
