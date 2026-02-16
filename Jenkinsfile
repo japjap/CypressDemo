@@ -29,20 +29,23 @@ pipeline {
             steps {
                 script {
                     if (isUnix()) {
+
                         sh """
                         docker run --rm \
                             -v \$WORKSPACE:/e2e \
                             -w /e2e \
                             ${CYPRESS_IMAGE} \
-                            npx cypress run --config-file cypress.config.js
+                            npx cypress run --config-file /e2e/cypress.config.js
                         """
+
                     } else {
+                        // Windows agent (not used in your case)
                         bat """
                         docker run --rm ^
                             -v %WORKSPACE%:/e2e ^
                             -w /e2e ^
                             ${CYPRESS_IMAGE} ^
-                            npx cypress run --config-file cypress.config.js
+                            npx cypress run --config-file /e2e/cypress.config.js
                         """
                     }
                 }
