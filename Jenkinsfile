@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         CYPRESS_IMAGE = 'cypress/included:14.5.4'
-        WORKDIR = '/var/jenkins_home/workspace/CypressPipeline'
+        DOCKER_VOLUME = 'cypress-workspace'
     }
 
     stages {
@@ -21,62 +21,63 @@ pipeline {
                 script {
                     echo "🔍 Current workspace directory: ${env.WORKSPACE}"
                     echo "📁 Listing workspace contents:"
-                    
-                    if (isUnix()) {
-                        sh 'ls -la'
-                    } else {
-                        bat 'dir'
-                    }
+                    sh "ls -la ${env.WORKSPACE}"
                 }
+            }
+        }
+
+        stage('Create Docker Volume') {
+            steps {
+                echo "📦 Ensuring shared Docker volume exists..."
+                sh """
+                docker volume create ${DOCKER_VOLUME} || true
+                """
+            }
+        }
+
+        stage('Sync Workspace to Volume') {
+            steps {
+                echo "🔄 Syncing Jenkins workspace into shared Docker volume..."
+                script {
+                    sh """
+                    docker run --rm \
+                      -v ${DOCKER_VOLUME}:/e2e \
+                      -v ${env.WORKSPACE}:/jenkins \
+                      busybox sh -c "rm -rf /e2e/* && cp -r /jenkins/* /e2e/"
+                    """
+                }
+                echo "✔ Sync complete."
             }
         }
 
         stage('Prepare Cypress Environment') {
             steps {
-                echo "🧪 Preparing Cypress Test Environment..."
+                echo "🧪 Preparing Cypress Environment..."
                 script {
-                    if (isUnix()) {
-                        sh """
-                        echo "➡ Cypress image: ${CYPRESS_IMAGE}"
-                        echo "➡ Docker version:"
-                        docker --version
-
-                        echo "➡ Checking mounted workspace path:"
-                        ls -la ${env.WORKDIR}
-                        """
-                    }
+                    sh """
+                    echo "➡ Cypress image: ${CYPRESS_IMAGE}"
+                    echo "➡ Docker version:" 
+                    docker --version
+                    echo "➡ Files inside volume:"
+                    docker run --rm -v ${DOCKER_VOLUME}:/e2e busybox sh -c "ls -la /e2e"
+                    """
                 }
-                echo "✔ Environment ready."
+                echo "✔ Environment Ready."
             }
         }
 
         stage('Run Cypress Tests in Docker') {
             steps {
                 script {
-                    echo "🚀 Starting Cypress tests inside Docker container..."
-
-                    if (isUnix()) {
-                        sh """
-                        echo "➡ Running Cypress with config file: /e2e/cypress.config.js"
-                        echo "➡ Mounting workspace: ${WORKDIR} → /e2e"
-
-                        docker run --rm \
-                            -v ${WORKDIR}:/e2e \
-                            -w /e2e \
-                            ${CYPRESS_IMAGE} \
-                            npx cypress run --config-file /e2e/cypress.config.js ||
-                            (echo "❌ Cypress execution failed. Check logs above." && exit 1)
-                        """
-                    } else {
-                        bat """
-                        echo Running Cypress on Windows agent...
-                        docker run --rm ^
-                            -v ${WORKDIR}:/e2e ^
-                            -w /e2e ^
-                            ${CYPRESS_IMAGE} ^
-                            npx cypress run --config-file /e2e/cypress.config.js
-                        """
-                    }
+                    echo "🚀 Running Cypress tests inside Docker..."
+                    sh """
+                    docker run --rm \
+                        -v ${DOCKER_VOLUME}:/e2e \
+                        -w /e2e \
+                        ${CYPRESS_IMAGE} \
+                        npx cypress run --config-file /e2e/cypress.config.js ||
+                        (echo '❌ Cypress execution failed.' && exit 1)
+                    """
                 }
             }
         }
@@ -84,10 +85,10 @@ pipeline {
 
     post {
         success {
-            echo '✅ Cypress tests passed!'
+            echo '✅ Cypress tests passed successfully!'
         }
         failure {
-            echo '❌ Cypress tests failed! Check the logs for details.'
+            echo '❌ Cypress tests failed! Check logs above.'
         }
         always {
             echo "📦 Pipeline finished. Cleaning up..."
