@@ -16,57 +16,49 @@ pipeline {
             }
         }
 
-        stage('Debug Workspace') {
+        stage('Prepare Volume') {
             steps {
-                script {
-                    echo "🔍 Current workspace directory: ${env.WORKSPACE}"
-                    echo "📁 Listing workspace contents:"
-                    sh "ls -la ${env.WORKSPACE}"
-                }
-            }
-        }
-
-        stage('Create Docker Volume') {
-            steps {
-                echo "📦 Ensuring shared Docker volume exists..."
-                sh """
-                docker volume create ${DOCKER_VOLUME} || true
-                """
+                echo "📦 Creating shared Docker volume if not exists..."
+                sh "docker volume create ${DOCKER_VOLUME} || true"
             }
         }
 
         stage('Sync Workspace to Volume') {
             steps {
-                echo "🔄 Syncing Jenkins workspace into shared Docker volume..."
                 script {
+                    echo "🔄 Copying Jenkins workspace into shared volume..."
+
                     sh """
+                    rm -rf /tmp/cypress-sync
+                    mkdir -p /tmp/cypress-sync
+
+                    # Copy FROM Jenkins container filesystem → host temp folder
+                    docker cp ${env.NODE_NAME}:/var/jenkins_home/workspace/CypressPipeline /tmp/cypress-sync
+
+                    # Copy FROM host temp folder → Docker volume
                     docker run --rm \
-                      -v ${DOCKER_VOLUME}:/e2e \
-                      -v ${env.WORKSPACE}:/jenkins \
-                      busybox sh -c "rm -rf /e2e/* && cp -r /jenkins/* /e2e/"
+                        -v ${DOCKER_VOLUME}:/e2e \
+                        -v /tmp/cypress-sync/CypressPipeline:/src \
+                        busybox sh -c "rm -rf /e2e/* && cp -r /src/* /e2e/"
                     """
+
+                    echo "✔ Workspace synced to volume."
                 }
-                echo "✔ Sync complete."
             }
         }
 
-        stage('Prepare Cypress Environment') {
+        stage('Debug Volume Contents') {
             steps {
-                echo "🧪 Preparing Cypress Environment..."
-                script {
-                    sh """
-                    echo "➡ Cypress image: ${CYPRESS_IMAGE}"
-                    echo "➡ Docker version:" 
-                    docker --version
-                    echo "➡ Files inside volume:"
-                    docker run --rm -v ${DOCKER_VOLUME}:/e2e busybox sh -c "ls -la /e2e"
-                    """
-                }
-                echo "✔ Environment Ready."
+                echo "🔍 Checking files inside the Docker volume..."
+                sh """
+                docker run --rm \
+                    -v ${DOCKER_VOLUME}:/e2e \
+                    busybox sh -c "ls -la /e2e"
+                """
             }
         }
 
-        stage('Run Cypress Tests in Docker') {
+        stage('Run Cypress Tests') {
             steps {
                 script {
                     echo "🚀 Running Cypress tests inside Docker..."
@@ -75,8 +67,7 @@ pipeline {
                         -v ${DOCKER_VOLUME}:/e2e \
                         -w /e2e \
                         ${CYPRESS_IMAGE} \
-                        npx cypress run --config-file /e2e/cypress.config.js ||
-                        (echo '❌ Cypress execution failed.' && exit 1)
+                        npx cypress run --config-file /e2e/cypress.config.js
                     """
                 }
             }
@@ -85,13 +76,13 @@ pipeline {
 
     post {
         success {
-            echo '✅ Cypress tests passed successfully!'
+            echo '✅ Cypress tests passed!'
         }
         failure {
-            echo '❌ Cypress tests failed! Check logs above.'
+            echo '❌ Cypress tests failed!'
         }
         always {
-            echo "📦 Pipeline finished. Cleaning up..."
+            echo '📦 Pipeline complete.'
         }
     }
 }
